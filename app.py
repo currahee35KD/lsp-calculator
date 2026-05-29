@@ -15,39 +15,69 @@ st.sidebar.subheader("メルカリ")
 mercari_fee = st.sidebar.slider("メルカリ 手数料(%)", 0, 20, 10)
 mercari_ship = st.sidebar.number_input("メルカリ 送料(円)", value=210, step=10)
 
-st.sidebar.subheader("eBay")
-usd_jpy_rate = st.sidebar.number_input("為替レート (円/USD)", value=150.0, step=1.0) # ←為替レートを追加
+st.sidebar.subheader("eBay / Payoneer")
+usd_jpy_rate = st.sidebar.number_input("基準為替レート (円/USD)", value=159.0, step=1.0)
+payoneer_fee = st.sidebar.number_input("Payoneer為替手数料 (%)", value=2.5, step=0.1)
 ebay_fee = st.sidebar.slider("eBay 手数料(%)", 0, 30, 15)
 ebay_customs = st.sidebar.slider("eBay 関税等(%)", 0, 20, 10)
 ebay_ad = st.sidebar.slider("eBay 広告費(%)", 0, 10, 2)
 ebay_ship = st.sidebar.number_input("eBay 国際送料(円)", value=4000, step=500)
 
 # --- 計算ロジック ---
-# 1. 獲得LSP
+# 1. 獲得LSPの計算
 card_lsp = (purchase_price * 0.01) / 400
 purchase_price_exc_tax = purchase_price / 1.1
 jmp_lsp = (purchase_price_exc_tax * (jmp_rate / 100)) / 100
 total_lsp = card_lsp + jmp_lsp
 
-# 2. 許容赤字と回収目標
-max_loss = total_lsp * target_lsp
-target_return = purchase_price - max_loss
-
-# 3. 最低出品価格の逆算
-mercari_target = (target_return + mercari_ship) / (1 - (mercari_fee / 100))
-
+# eBayの共通計算用変数
+effective_rate = usd_jpy_rate * (1 - (payoneer_fee / 100))
 ebay_total_rate = (ebay_fee + ebay_customs + ebay_ad) / 100
-ebay_target_jpy = (target_return + ebay_ship) / (1 - ebay_total_rate)
-ebay_target_usd = ebay_target_jpy / usd_jpy_rate # ←ここでドル換算
+
+# ==========================================
+# 2A. 【トントンライン】の計算（損失0円）
+# ==========================================
+target_return_zero = purchase_price # 仕入れ値をそのまま回収する
+
+mercari_target_zero = (target_return_zero + mercari_ship) / (1 - (mercari_fee / 100))
+ebay_target_jpy_zero = (target_return_zero + ebay_ship) / (1 - ebay_total_rate)
+ebay_target_usd_zero = ebay_target_jpy_zero / effective_rate
+
+# ==========================================
+# 2B. 【目標LSP単価ライン】の計算（許容赤字）
+# ==========================================
+max_loss = total_lsp * target_lsp
+target_return_loss = purchase_price - max_loss # 赤字を許容した回収目標
+
+mercari_target_loss = (target_return_loss + mercari_ship) / (1 - (mercari_fee / 100))
+ebay_target_jpy_loss = (target_return_loss + ebay_ship) / (1 - ebay_total_rate)
+ebay_target_usd_loss = ebay_target_jpy_loss / effective_rate
+
 
 # --- メイン画面の表示 ---
-st.subheader("💡 シミュレーション結果")
-col1, col2 = st.columns(2)
-col1.metric("獲得予定LSP", f"{total_lsp:.2f} LSP")
-col2.metric("許容できる最大赤字", f"{-max_loss:,.0f} 円")
+st.subheader("💡 獲得予定のLSP")
+st.info(f"合計: **{total_lsp:.2f} LSP** （カード分 {card_lsp:.2f} ＋ JMP分 {jmp_lsp:.2f}）")
 
 st.markdown("---")
-st.success(f"🟠 メルカリ 最低出品価格: **{mercari_target:,.0f} 円**")
-st.info(f"🔵 eBay 最低出品価格: **$ {ebay_target_usd:,.2f}** (約 {ebay_target_jpy:,.0f} 円)") # ←表示をドルに変更
 
-st.caption(f"※どちらの価格で売れても、手元に {target_return:,.0f} 円の現金が戻る計算になっています。")
+# 表示ブロック1：トントンライン
+st.subheader("👑 トントンライン（損失0円 / LSP完全無料）")
+st.caption(f"手元に現金 {target_return_zero:,.0f} 円が戻り、LSPがタダで手に入る神ラインです。")
+col1, col2 = st.columns(2)
+with col1:
+    st.success(f"メルカリ: **{mercari_target_zero:,.0f} 円**")
+with col2:
+    st.success(f"eBay: **$ {ebay_target_usd_zero:,.2f}**")
+
+st.markdown("<br>", unsafe_allow_html=True) # 少し余白を空ける
+
+# 表示ブロック2：目標LSPライン
+st.subheader(f"🎯 目標LSP単価ライン（単価 {target_lsp}円）")
+st.caption(f"最大 {max_loss:,.0f} 円の赤字まで許容し、手元に {target_return_loss:,.0f} 円戻す現実的ラインです。")
+col3, col4 = st.columns(2)
+with col3:
+    st.warning(f"メルカリ: **{mercari_target_loss:,.0f} 円**")
+with col4:
+    st.warning(f"eBay: **$ {ebay_target_usd_loss:,.2f}**")
+
+st.caption(f"※eBayは実質レート {effective_rate:,.2f} 円（手数料引後）で換算しています。")

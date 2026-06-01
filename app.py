@@ -35,7 +35,16 @@ effective_rate = usd_jpy_rate * (1 - (payoneer_fee / 100))
 ebay_total_rate = (ebay_fee + ebay_customs + ebay_ad) / 100
 
 # ==========================================
-# 2A. 【トントンライン】の計算（損失0円）
+# 2A. 【利益10%ライン】の計算
+# ==========================================
+target_return_profit = purchase_price * 1.1 # 仕入れ値 + 10%利益
+
+mercari_target_profit = (target_return_profit + mercari_ship) / (1 - (mercari_fee / 100))
+ebay_target_jpy_profit = (target_return_profit + ebay_ship) / (1 - ebay_total_rate)
+ebay_target_usd_profit = ebay_target_jpy_profit / effective_rate
+
+# ==========================================
+# 2B. 【トントンライン】の計算（損失0円）
 # ==========================================
 target_return_zero = purchase_price # 仕入れ値をそのまま回収する
 
@@ -44,7 +53,7 @@ ebay_target_jpy_zero = (target_return_zero + ebay_ship) / (1 - ebay_total_rate)
 ebay_target_usd_zero = ebay_target_jpy_zero / effective_rate
 
 # ==========================================
-# 2B. 【目標LSP単価ライン】の計算（許容赤字）
+# 2C. 【目標LSP単価ライン】の計算（許容赤字）
 # ==========================================
 max_loss = total_lsp * target_lsp
 target_return_loss = purchase_price - max_loss # 赤字を許容した回収目標
@@ -60,24 +69,35 @@ st.info(f"合計: **{total_lsp:.2f} LSP** （カード分 {card_lsp:.2f} ＋ JMP
 
 st.markdown("---")
 
-# 表示ブロック1：トントンライン
-st.subheader("👑 トントンライン（損失0円 / LSP完全無料）")
-st.caption(f"手元に現金 {target_return_zero:,.0f} 円が戻り、LSPがタダで手に入る神ラインです。")
+# 表示ブロック1：利益10%ライン
+st.subheader("🚀 利益10%ライン（LSP無料 ＋ 現金利益）")
+st.caption(f"手元に現金 {target_return_profit:,.0f} 円が戻り、純利益も出る理想ラインです。")
 col1, col2 = st.columns(2)
 with col1:
-    st.success(f"メルカリ: **{mercari_target_zero:,.0f} 円**")
+    st.error(f"メルカリ: **{mercari_target_profit:,.0f} 円**") # 難易度が高いので赤色
 with col2:
-    st.success(f"eBay: **$ {ebay_target_usd_zero:,.2f}**")
+    st.error(f"eBay: **$ {ebay_target_usd_profit:,.2f}**")
 
-st.markdown("<br>", unsafe_allow_html=True) # 少し余白を空ける
+st.markdown("<br>", unsafe_allow_html=True)
 
-# 表示ブロック2：目標LSPライン
-st.subheader(f"🎯 目標LSP単価ライン（単価 {target_lsp}円）")
-st.caption(f"最大 {max_loss:,.0f} 円の赤字まで許容し、手元に {target_return_loss:,.0f} 円戻す現実的ラインです。")
+# 表示ブロック2：トントンライン
+st.subheader("👑 トントンライン（損失0円 / LSP完全無料）")
+st.caption(f"手元に現金 {target_return_zero:,.0f} 円が戻り、LSPがタダで手に入る神ラインです。")
 col3, col4 = st.columns(2)
 with col3:
-    st.warning(f"メルカリ: **{mercari_target_loss:,.0f} 円**")
+    st.success(f"メルカリ: **{mercari_target_zero:,.0f} 円**")
 with col4:
+    st.success(f"eBay: **$ {ebay_target_usd_zero:,.2f}**")
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# 表示ブロック3：目標LSPライン
+st.subheader(f"🎯 目標LSP単価ライン（単価 {target_lsp}円）")
+st.caption(f"最大 {max_loss:,.0f} 円の赤字まで許容し、手元に {target_return_loss:,.0f} 円戻す現実的ラインです。")
+col5, col6 = st.columns(2)
+with col5:
+    st.warning(f"メルカリ: **{mercari_target_loss:,.0f} 円**")
+with col6:
     st.warning(f"eBay: **$ {ebay_target_usd_loss:,.2f}**")
 
 st.caption(f"※eBayは実質レート {effective_rate:,.2f} 円（手数料引後）で換算しています。")

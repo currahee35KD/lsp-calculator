@@ -7,7 +7,15 @@ st.markdown("仕入れ値・LSP目標からの最低出品価格と、同梱時�
 
 # サイドバー（入力フォーム）
 st.sidebar.header("📊 基本設定 (1個あたり)")
-purchase_price = st.sidebar.number_input("入荷価格（税込）", value=4000, step=100)
+
+# 定価と割引率から入荷価格を自動計算
+list_price = st.sidebar.number_input("定価（税込）", value=4350, step=100)
+discount_rate = st.sidebar.slider("仕入れ割引率 (%)", min_value=0.0, max_value=50.0, value=8.0, step=1.0)
+purchase_price = int(list_price * (1 - (discount_rate / 100)))
+
+# 算出された入荷価格を強調表示
+st.sidebar.info(f"💰 算出された入荷価格: **{purchase_price:,} 円**")
+
 target_lsp = st.sidebar.number_input("目標LSP単価（円）", value=1000, step=100)
 jmp_rate = st.sidebar.number_input("JMPマイル還元率（100円=Xマイル）", value=4.0, step=0.5)
 

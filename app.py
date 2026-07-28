@@ -24,7 +24,7 @@ ebay_ad = st.sidebar.slider("eBay 広告費(%)", 0.0, 10.0, 2.0, step=0.5)
 st.sidebar.subheader("CPaSS / DDP 設定")
 ebay_ship = st.sidebar.number_input("CPaSS 国際送料(円)", value=4710, step=100) # デフォルト：フェデックス・パック
 ebay_customs = st.sidebar.number_input("米国関税率 (%)", value=12.5, step=0.5)
-cpass_fee = st.sidebar.number_input("CPaSS関税手数料 (関税額の%)", value=2.1, step=0.1)
+cpass_handling_fee = st.sidebar.number_input("CPaSS関税手数料 (最低固定費・円)", value=850, step=50) # ここを固定費に変更
 
 # --- 計算ロジック ---
 # 1. 獲得LSPの計算
@@ -34,16 +34,17 @@ jmp_lsp = (purchase_price_exc_tax * (jmp_rate / 100)) / 100
 total_lsp = card_lsp + jmp_lsp
 
 # ==========================================
-# CPaSS特有の計算ロジック
+# CPaSS特有の計算ロジック（安全重視）
 # ==========================================
 # 実質の為替レート（Payoneer手数料を引いた手取りレート）
 effective_rate = usd_jpy_rate * (1 - (payoneer_fee / 100))
 
-# CPaSSの立替手数料は「関税額」にかかるため、売上全体に対する%に換算する
-cpass_customs_handling_rate = ebay_customs * (cpass_fee / 100)
+# 送料に関税手数料（最低850円）を固定費として合算し、絶対に取りっぱぐれないようにする
+safe_ebay_fixed_cost = ebay_ship + cpass_handling_fee
 
-# eBayで引かれる変動費の合計割合（基本手数料 + 広告費 + 関税 + CPaSS関税立替手数料）
-ebay_total_rate = (ebay_fee + ebay_ad + ebay_customs + cpass_customs_handling_rate) / 100
+# eBayで引かれる変動費の合計割合（基本手数料 + 広告費 + 関税）
+# ※CPaSSの2.1%は最低額850円に達しないケースが多いため、パーセンテージからは除外し固定費として処理
+ebay_total_rate = (ebay_fee + ebay_ad + ebay_customs) / 100
 
 # ==========================================
 # 2A. 【利益10%ライン】の計算
@@ -51,7 +52,7 @@ ebay_total_rate = (ebay_fee + ebay_ad + ebay_customs + cpass_customs_handling_ra
 target_return_profit = purchase_price * 1.1 # 仕入れ値 + 10%利益
 
 mercari_target_profit = (target_return_profit + mercari_ship) / (1 - (mercari_fee / 100))
-ebay_target_jpy_profit = (target_return_profit + ebay_ship) / (1 - ebay_total_rate)
+ebay_target_jpy_profit = (target_return_profit + safe_ebay_fixed_cost) / (1 - ebay_total_rate)
 ebay_target_usd_profit = ebay_target_jpy_profit / effective_rate
 
 # ==========================================
@@ -60,7 +61,7 @@ ebay_target_usd_profit = ebay_target_jpy_profit / effective_rate
 target_return_zero = purchase_price # 仕入れ値をそのまま回収する
 
 mercari_target_zero = (target_return_zero + mercari_ship) / (1 - (mercari_fee / 100))
-ebay_target_jpy_zero = (target_return_zero + ebay_ship) / (1 - ebay_total_rate)
+ebay_target_jpy_zero = (target_return_zero + safe_ebay_fixed_cost) / (1 - ebay_total_rate)
 ebay_target_usd_zero = ebay_target_jpy_zero / effective_rate
 
 # ==========================================
@@ -70,7 +71,7 @@ max_loss = total_lsp * target_lsp
 target_return_loss = purchase_price - max_loss # 赤字を許容した回収目標
 
 mercari_target_loss = (target_return_loss + mercari_ship) / (1 - (mercari_fee / 100))
-ebay_target_jpy_loss = (target_return_loss + ebay_ship) / (1 - ebay_total_rate)
+ebay_target_jpy_loss = (target_return_loss + safe_ebay_fixed_cost) / (1 - ebay_total_rate)
 ebay_target_usd_loss = ebay_target_jpy_loss / effective_rate
 
 
@@ -111,4 +112,4 @@ with col5:
 with col6:
     st.warning(f"eBay: **$ {ebay_target_usd_loss:,.2f}**")
 
-st.caption(f"※eBayは実質レート {effective_rate:,.2f} 円（手数料引後）、関税等合計変動費 {ebay_total_rate*100:.2f}% で換算しています。")
+st.caption(f"※eBayは実質レート {effective_rate:,.2f} 円（手数料引後）、関税等合計変動費 {ebay_total_rate*100:.2f}% 、CPaSS固定費（送料＋手数料）{safe_ebay_fixed_cost:,.0f} 円で換算しています。")

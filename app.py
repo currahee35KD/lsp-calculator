@@ -119,7 +119,7 @@ st.info(f"合計: **{total_lsp:.2f} LSP** （カード分 {card_lsp:.2f} ＋ JMP
 
 st.markdown("---")
 st.subheader(f"🚀 1個売りの最低出品価格")
-st.markdown(f"**適用重量**: {billed_weight_1pc:.1f}kg / **送料総額 예측**: **{shipping_cost_1pc:,.0f} 円**")
+st.markdown(f"**適用重量**: {billed_weight_1pc:.1f}kg / **送料総額 予測**: **{shipping_cost_1pc:,.0f} 円**")
 
 # 内訳表示（見やすくボックス化）
 st.caption(f"**【CPaSS送料・関税の内訳 (利益10%設定時)】**\n"
@@ -154,7 +154,7 @@ if "FedExパック" in package_type:
 cols = st.columns(5)
 cols[0].markdown("**個数**")
 cols[1].markdown("**適用重量**")
-cols[2].markdown("**CPaSS総額 예측**")
+cols[2].markdown("**CPaSS総額 予測**")
 cols[3].markdown("**目標売上(USD)**")
 cols[4].markdown("**提示可能な割引率**")
 

@@ -16,12 +16,15 @@ mercari_fee = st.sidebar.slider("メルカリ 手数料(%)", 0, 20, 10)
 mercari_ship = st.sidebar.number_input("メルカリ 送料(円)", value=210, step=10)
 
 st.sidebar.subheader("eBay / Payoneer")
-usd_jpy_rate = st.sidebar.number_input("基準為替レート (円/USD)", value=159.0, step=1.0)
+usd_jpy_rate = st.sidebar.number_input("基準為替レート (円/USD)", value=160.0, step=1.0)
 payoneer_fee = st.sidebar.number_input("Payoneer為替手数料 (%)", value=2.5, step=0.1)
-ebay_fee = st.sidebar.slider("eBay 手数料(%)", 0, 30, 15)
-ebay_customs = st.sidebar.slider("eBay 関税等(%)", 0, 20, 10)
-ebay_ad = st.sidebar.slider("eBay 広告費(%)", 0, 10, 2)
-ebay_ship = st.sidebar.number_input("eBay 国際送料(円)", value=4000, step=500)
+ebay_fee = st.sidebar.slider("eBay 手数料(%)", 0.0, 30.0, 15.0, step=0.5)
+ebay_ad = st.sidebar.slider("eBay 広告費(%)", 0.0, 10.0, 2.0, step=0.5)
+
+st.sidebar.subheader("CPaSS / DDP 設定")
+ebay_ship = st.sidebar.number_input("CPaSS 国際送料(円)", value=4710, step=100) # デフォルト：フェデックス・パック
+ebay_customs = st.sidebar.number_input("米国関税率 (%)", value=12.5, step=0.5)
+cpass_fee = st.sidebar.number_input("CPaSS関税手数料 (関税額の%)", value=2.1, step=0.1)
 
 # --- 計算ロジック ---
 # 1. 獲得LSPの計算
@@ -30,9 +33,17 @@ purchase_price_exc_tax = purchase_price / 1.1
 jmp_lsp = (purchase_price_exc_tax * (jmp_rate / 100)) / 100
 total_lsp = card_lsp + jmp_lsp
 
-# eBayの共通計算用変数
+# ==========================================
+# CPaSS特有の計算ロジック
+# ==========================================
+# 実質の為替レート（Payoneer手数料を引いた手取りレート）
 effective_rate = usd_jpy_rate * (1 - (payoneer_fee / 100))
-ebay_total_rate = (ebay_fee + ebay_customs + ebay_ad) / 100
+
+# CPaSSの立替手数料は「関税額」にかかるため、売上全体に対する%に換算する
+cpass_customs_handling_rate = ebay_customs * (cpass_fee / 100)
+
+# eBayで引かれる変動費の合計割合（基本手数料 + 広告費 + 関税 + CPaSS関税立替手数料）
+ebay_total_rate = (ebay_fee + ebay_ad + ebay_customs + cpass_customs_handling_rate) / 100
 
 # ==========================================
 # 2A. 【利益10%ライン】の計算
@@ -74,7 +85,7 @@ st.subheader("🚀 利益10%ライン（LSP無料 ＋ 現金利益）")
 st.caption(f"手元に現金 {target_return_profit:,.0f} 円が戻り、純利益も出る理想ラインです。")
 col1, col2 = st.columns(2)
 with col1:
-    st.error(f"メルカリ: **{mercari_target_profit:,.0f} 円**") # 難易度が高いので赤色
+    st.error(f"メルカリ: **{mercari_target_profit:,.0f} 円**")
 with col2:
     st.error(f"eBay: **$ {ebay_target_usd_profit:,.2f}**")
 
@@ -100,4 +111,4 @@ with col5:
 with col6:
     st.warning(f"eBay: **$ {ebay_target_usd_loss:,.2f}**")
 
-st.caption(f"※eBayは実質レート {effective_rate:,.2f} 円（手数料引後）で換算しています。")
+st.caption(f"※eBayは実質レート {effective_rate:,.2f} 円（手数料引後）、関税等合計変動費 {ebay_total_rate*100:.2f}% で換算しています。")

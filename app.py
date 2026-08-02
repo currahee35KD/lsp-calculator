@@ -51,8 +51,10 @@ ebay_ad = st.sidebar.slider("eBay 広告費(%)", 0.0, 10.0, 2.0, step=0.5)
 
 st.sidebar.subheader("CPaSS / DDP 設定")
 ebay_customs = st.sidebar.number_input("米国関税率 (%)", value=12.5, step=0.5)
-cpass_handling_fee = st.sidebar.number_input("CPaSS関税処理手数料 (最低固定費・円)", value=850, step=50)
-surcharge_multiplier = st.sidebar.number_input("CPaSS 燃油等サーチャージ倍率", value=2.10, step=0.01)
+# 固定費850円の誤認を修正（CPaSS実績に基づき、コンサバな100円に設定）
+cpass_handling_fee = st.sidebar.number_input("CPaSS関税処理手数料 (最低固定費・円)", value=100, step=10)
+# サーチャージ倍率2.1倍の過剰試算を修正（実績約1.47倍に対し、コンサバな1.50倍に設定）
+surcharge_multiplier = st.sidebar.number_input("CPaSS 燃油等サーチャージ倍率", value=1.50, step=0.01)
 
 # FICP 米国(Zone F) 基本料金テーブル (kg: 基本料金)
 ficp_base_rates = {

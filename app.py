@@ -2,7 +2,7 @@ import math
 import streamlit as st
 
 # 画面のタイトル
-st.title("LSPレスキュー：最低出品価格＆まとめ売りチェッカー")
+st.title("LSPレスキュー：最低出品価格＆まとめ売りチェッカー2")
 st.markdown("仕入れ値・LSP目標からの最低出品価格と、同梱時の安全な「まとめ売り割引率」を自動算出します。")
 
 # サイドバー（入力フォーム）
